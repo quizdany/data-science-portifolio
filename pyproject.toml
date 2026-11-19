@@ -3,14 +3,15 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "penguin-species-classifier"
+name = "data-science-portfolio"
 version = "0.1.0"
-description = "A reproducible data science project for training a penguin species classifier."
+description = "Reproducible data science projects: credit default risk model and penguin species classifier."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "joblib>=1.4.0",
     "matplotlib>=3.8.0",
+    "numpy>=1.26",
     "pandas>=2.2.0",
     "scikit-learn>=1.4.0",
 ]
@@ -23,6 +24,7 @@ dev = [
 
 [project.scripts]
 penguin-classifier = "penguin_classifier.cli:app"
+credit-risk = "credit_risk.cli:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]

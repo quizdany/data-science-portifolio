@@ -1,0 +1,3 @@
+model,roc_auc,gini,ks,pr_auc,brier
+gradient_boosting,0.7796,0.5593,0.4343,0.5899,0.1668
+logistic_regression,0.7657,0.5314,0.4095,0.5837,0.1724
