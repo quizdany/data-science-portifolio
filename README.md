@@ -1,68 +1,56 @@
-# Data Science Portfolio: Penguin Species Classifier
+# Data science portfolio
 
-An end-to-end data science project that trains a supervised machine-learning
-model on real Palmer Penguins data from the internet.
+[![ci](https://github.com/quizdany/data-science-portifolio/actions/workflows/ci.yml/badge.svg)](https://github.com/quizdany/data-science-portifolio/actions/workflows/ci.yml)
 
-The project demonstrates:
+Two reproducible machine learning projects, each with a data contract, tests and a model card.
 
-- Data acquisition from a public CSV URL.
-- Data cleaning and train/test splitting.
-- Reproducible preprocessing with `ColumnTransformer`.
-- Model training and hyperparameter search with scikit-learn.
-- Evaluation using accuracy, macro F1, confusion matrix, and classification report.
-- Feature importance extraction for model interpretability.
-- Saved model artifacts for inference.
-- Unit tests and GitHub Actions CI.
+## 1. Credit default risk model
 
-## Dataset
+Predicts the probability that a loan applicant defaults, then makes an approve or refer decision based on what each kind of mistake costs.
 
-The project uses the Palmer Penguins dataset hosted by the `mwaskom/seaborn-data`
-repository:
+- **Validated data:** the loader checks the data contract and fails fast if it is broken.
+- **Model comparison:** an interpretable logistic regression against gradient boosting, under 5-fold cross-validation. The simpler model wins unless the complex one is clearly better.
+- **Calibrated probabilities:** Platt scaling, checked with a calibration table, so a score of 0.3 really means a 30% default risk.
+- **Cost-based decision threshold:** a missed default costs 5 times a wrongly rejected applicant. The threshold is tuned on cross-validated scores, never on the test set.
+- **Fairness audit:** sex, age and foreign-worker status are excluded from the model and used only to compare approval and error rates across groups.
+- **Drift monitoring:** Population Stability Index (PSI) for scores and features, with stable / monitor / investigate thresholds.
 
-<https://raw.githubusercontent.com/mwaskom/seaborn-data/master/penguins.csv>
+**Held-out results (250 applicants):** ROC-AUC 0.81, Gini 0.63, KS 0.53, Brier score 0.155. The cost-based threshold cuts expected cost per applicant from 0.90 (usual 0.5 cut-off) to 0.50, against 1.50 for approving everyone.
 
-The target is `species`. Features include bill measurements, flipper length,
-body mass, island, and sex.
+![Calibration and cost curve](docs/credit_risk/calibration_and_cost.png)
 
-## Quick Start
+Full details, including limitations: [model card](docs/credit_risk/model_card.md).
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
-python -m penguin_classifier train
-python -m penguin_classifier predict --sample-json "{\"bill_length_mm\":39.1,\"bill_depth_mm\":18.7,\"flipper_length_mm\":181,\"body_mass_g\":3750,\"island\":\"Torgersen\",\"sex\":\"Male\"}"
+python -m credit_risk train      # downloads data, trains, writes reports to artifacts/credit_risk/
+make credit-score                # scores an example applicant
 ```
 
-## Outputs
+**Data:** Statlog German Credit (1,000 applicants, 300 defaults), cleaned version from [selva86/datasets](https://github.com/selva86/datasets).
 
-Generated artifacts are written to `artifacts/` and ignored by Git:
+## 2. Penguin species classifier
 
-- `data/penguins.csv`: downloaded source data.
-- `models/penguin_species_model.joblib`: trained model.
-- `reports/metrics.json`: evaluation metrics.
-- `reports/classification_report.csv`: per-class metrics.
-- `reports/confusion_matrix.csv`: confusion matrix.
-- `reports/feature_importance.csv`: top features used by the model.
-- `reports/confusion_matrix.png`: visual confusion matrix.
-- `reports/feature_importance.png`: top feature importance chart.
-
-## Commands
+A compact end-to-end classification pipeline on the Palmer Penguins data: preprocessing with `ColumnTransformer`, grid search over a random forest, macro F1 and a confusion matrix, feature importance, and a saved model with a prediction CLI. See its [model card](docs/model_card.md).
 
 ```bash
-make install
-make train
+python -m penguin_classifier train
 make predict
-make test
-make lint
-make clean
 ```
 
-## Project Layout
+## Tests
+
+```bash
+pytest
+```
+
+Tests run offline. The credit model is tested on synthetic applicants with a known signal, covering the data contract, the cost function, threshold selection, KS, PSI drift detection, the group audit and the full training routine. CI runs linting and tests on every push.
+
+## Layout
 
 ```text
-src/penguin_classifier/  Python package
-tests/                   Unit tests
-docs/model_card.md       Model card and limitations
-.github/workflows/ci.yml Continuous integration
+src/credit_risk/          data contract, modeling, fairness and drift monitoring, CLI
+src/penguin_classifier/   penguin classifier package
+docs/credit_risk/         model card and results snapshot
+tests/                    unit and integration tests
 ```
